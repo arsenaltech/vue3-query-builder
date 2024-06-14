@@ -24,6 +24,10 @@ export function isRuleSet(param: any): param is RuleSet {
   if (typeof param.operatorIdentifier !== 'string') {
     return false;
   }
+  
+  if (typeof param.subOperatorIdentifier !== 'string') {
+    return false;
+  }
 
   return Array.isArray(param.children)
     && param.children.every((child: any) => isRule(child) || isRuleSet(child));
