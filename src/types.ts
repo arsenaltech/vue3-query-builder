@@ -1,4 +1,4 @@
-import Vue, { Component } from 'vue';
+import { Component as VueComponent, ComponentPublicInstance } from 'vue';
 import { SortableOptions } from 'sortablejs';
 
 export interface Rule {
@@ -8,6 +8,7 @@ export interface Rule {
 
 export interface RuleSet {
   operatorIdentifier: string,
+  subOperatorIdentifier: string,
   children: Array<RuleSet | Rule>,
 }
 
@@ -19,12 +20,13 @@ export interface OperatorDefinition {
 export interface RuleDefinition {
   identifier: string,
   name: string,
-  component: Component | string,
+  component: VueComponent | string,
   initialValue?: any,
 }
 
 export interface QueryBuilderConfig {
   operators: OperatorDefinition[],
+  suboperators: OperatorDefinition[],
   rules: RuleDefinition[],
   maxDepth?: number,
   colors?: string[],
@@ -45,7 +47,7 @@ export interface GroupCtrlSlotProps {
 }
 
 export interface RuleSlotProps {
-  ruleComponent: Component | string,
+  ruleComponent: VueComponent | string,
   ruleData: any,
   ruleIdentifier: string,
   updateRuleData: (newData: any) => void,
@@ -53,7 +55,7 @@ export interface RuleSlotProps {
 
 export const QueryBuilderGroupSym = Symbol('QueryBuilderGroup');
 
-export interface QueryBuilderGroup extends Vue {
+export interface QueryBuilderGroup extends ComponentPublicInstance {
   selectedOperator: string,
   depth: number,
   trap: ((position: number, newChild: RuleSet | Rule) => void) | null,
