@@ -1,15 +1,16 @@
-import Vue from 'vue';
+import { ComponentPublicInstance } from 'vue';
+import mitt, { Emitter } from 'mitt';
 import {
   QueryBuilderGroupSym,
   RuleSet, QueryBuilderGroup, ComponentRegistration, MergeTrap as MergeTrapInterface, Rule,
-} from '@/types';
+} from './types';
 
 function getNextGroup(group: QueryBuilderGroup): QueryBuilderGroup {
   if (group.depth < 1) {
     return group;
   }
 
-  let vm: Vue = group;
+  let vm: ComponentPublicInstance | null | undefined = group;
 
   do {
     vm = vm.$parent;
@@ -81,6 +82,7 @@ function mergeViaParent(
       'query-update',
       {
         operatorIdentifier: commonAncestor.selectedOperator,
+        subOperatorIdentifier: commonAncestor.selectedOperator,
         children,
       } as RuleSet,
     );
@@ -121,6 +123,7 @@ function mergeViaNode(
       'query-update',
       {
         operatorIdentifier: parentEmitter.selectedOperator,
+        subOperatorIdentifier: parentEmitter.selectedSubOperator,
         children,
       } as RuleSet,
     );
@@ -130,16 +133,17 @@ function mergeViaNode(
 }
 
 export default class MergeTrap implements MergeTrapInterface {
-  private eventBus: Vue
+  private eventBus: Emitter;
 
   constructor() {
-    this.eventBus = new Vue();
+    this.eventBus = mitt();
 
     Promise.all<ComponentRegistration>([
-      new Promise(res => this.eventBus.$once('adder-registered', res)),
-      new Promise(res => this.eventBus.$once('remover-registered', res)),
+      new Promise(res => this.eventBus.on('adder-registered', res)),
+      new Promise(res => this.eventBus.on('remover-registered', res)),
     ])
-      .then((args: ComponentRegistration[]) => triggerUpdate(args[0], args[1]));
+      .then((args: ComponentRegistration[]) => triggerUpdate(args[0], args[1]))
+      .then(() => this.eventBus.all.clear());
   }
 
   public registerSortUpdate(update: ComponentRegistration): void {
@@ -151,10 +155,10 @@ export default class MergeTrap implements MergeTrapInterface {
   }
 
   protected registerAdder(ev: ComponentRegistration): void {
-    this.eventBus.$emit('adder-registered', ev);
+    this.eventBus.emit('adder-registered', ev);
   }
 
   protected registerRemover(ev: ComponentRegistration): void {
-    this.eventBus.$emit('remover-registered', ev);
+    this.eventBus.emit('remover-registered', ev);
   }
 }
